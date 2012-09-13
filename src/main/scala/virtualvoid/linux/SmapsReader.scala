@@ -130,6 +130,11 @@ object SmapsReader {
   def isAccessible(f: File): Boolean =
     new File(f, "smaps").canRead
 
+  def printUnderlined(string: String) {
+    println(string)
+    println(string.replaceAll("[^\\|]", "-"))
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.size > 0)
       output(readProcessSmaps(args(0).toInt))
@@ -143,19 +148,23 @@ object SmapsReader {
         val list = maps.map(x => (x, x.total(key))).sortBy(- _._2)
         println("Total "+key+": "+maps.map(_.total(key)).sum+" KB\n")
         println("Top 20 "+key+"\n")
+        printUnderlined("Memory Usg | PID   | Command line")
+
         list.take(20).foreach {
           case (proc, size) =>
-            println("%7d KB %5d %s" format (size, proc.pid, proc.cmd))
+            println("%7d KB | %5d | %s" format (size, proc.pid, proc.cmd))
         }
         println()
         println("Top 20 %s by cmd\n" format key)
+        printUnderlined("Memory Usg | Command line")
         val byCmd = maps.groupBy(_.cmd).mapValues(_.map(_.total(key)).sum).toSeq.sortBy(- _._2)
         byCmd.take(20).foreach {
           case (cmd, size) =>
-            println("%7d KB %s" format (size, cmd))
+            println("%7d KB | %s" format (size, cmd))
         }
       }
       stat("Rss")
+      println()
       stat("Swap")
     }
   }
