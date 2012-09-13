@@ -163,7 +163,7 @@ object SmapsReader {
             println("%7d KB | %s" format (size, cmd))
         }
       }
-      stat("Rss")
+      stat("Pss")
       println()
       stat("Swap")
     }
