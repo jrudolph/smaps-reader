@@ -141,7 +141,7 @@ object SmapsReader {
 
       def stat(key: String) {
         val list = maps.map(x => (x, x.total(key))).sortBy(- _._2)
-        println("Total "+key+": "+maps.map(_.total(key)).sum+" KB\n\n")
+        println("Total "+key+": "+maps.map(_.total(key)).sum+" KB\n")
         println("Top 20 "+key+"\n")
         list.take(20).foreach {
           case (proc, size) =>
