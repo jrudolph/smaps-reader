@@ -141,17 +141,18 @@ object SmapsReader {
 
       def stat(key: String) {
         val list = maps.map(x => (x, x.total(key))).sortBy(- _._2)
-        println("Total "+key+": "+maps.map(_.total(key)).sum+" KB")
-        println("Top 20 "+key)
+        println("Total "+key+": "+maps.map(_.total(key)).sum+" KB\n\n")
+        println("Top 20 "+key+"\n")
         list.take(20).foreach {
           case (proc, size) =>
             println("%7d KB %5d %s" format (size, proc.pid, proc.cmd))
         }
-        println("Top 20 %s by cmd" format key)
+        println()
+        println("Top 20 %s by cmd\n" format key)
         val byCmd = maps.groupBy(_.cmd).mapValues(_.map(_.total(key)).sum).toSeq.sortBy(- _._2)
         byCmd.take(20).foreach {
           case (cmd, size) =>
-            println("%5d KB %s" format (size, cmd))
+            println("%7d KB %s" format (size, cmd))
         }
       }
       stat("Rss")
