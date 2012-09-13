@@ -1,0 +1,1 @@
+name := "smaps-reader"
