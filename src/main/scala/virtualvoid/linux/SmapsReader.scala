@@ -30,12 +30,33 @@ object SmapsReader {
     def total(key: String): Long =
       entries.map(_.stats.get(key).getOrElse(0L)).sum
 
-    def cmd: String =
-      cmdLine.headOption
-             .getOrElse("")
-             .split(' ')
-             .headOption.getOrElse("")
+    lazy val cmd: String =
+      mapCmdLineInfo(
+        cmdLine.headOption
+               .getOrElse("")
+               .split(' ')
+               .headOption.getOrElse(""), cmdLine)
+
+    def extraInfo: String =
+      if (cmd == "sbt")
+        " "+workingDirectory.getName
+      else
+        ""
+
+    def workingDirectory = new File("/proc/"+pid+"/cwd").getCanonicalFile
   }
+
+  def mapCmdLineInfo(cmd: String, cmdLine: Seq[String]): String =
+    if (cmd.contains("java"))
+      mapJavaCmdLineInfo(cmd, cmdLine)
+    else
+      cmd
+
+  def mapJavaCmdLineInfo(cmd: String, cmdLine: Seq[String]): String =
+    if (cmdLine.exists(_.contains("sbt")))
+      "sbt"
+    else
+      cmd
 
   import ParserHelper._
 
@@ -152,7 +173,7 @@ object SmapsReader {
 
         list.take(20).foreach {
           case (proc, size) =>
-            println("%7d KB | %5d | %s" format (size, proc.pid, proc.cmd))
+            println("%7d KB | %5d | %s%s" format (size, proc.pid, proc.cmd, proc.extraInfo))
         }
         println()
         println("Top 20 %s by cmd\n" format key)
