@@ -83,15 +83,19 @@ object SmapsReader {
         (SmapsEntry(name, from.asHexLong, to.asHexLong, perms, offset.asHexLong, dev, inode.asLong, stats), nextLine)
     }
     var line = reader.readLine
-    val buffer = new scala.collection.mutable.ListBuffer[SmapsEntry]
-    do {
-      val (entry, next) = readEntry(line)
-      buffer += entry
-      line = next
-    } while (line != null)
-    buffer.toList
+    if (line != null) {
+      val buffer = new scala.collection.mutable.ListBuffer[SmapsEntry]
+      do {
+        val (entry, next) = readEntry(line)
+        buffer += entry
+        line = next
+      } while (line != null)
+      buffer.toList
+    } else Nil
   } catch {
-    case _ =>
+    case io: IOException if io.getMessage.contains("Permission denied") => Nil // ignore
+    case e =>
+      e.printStackTrace()
       Nil
   }
 
