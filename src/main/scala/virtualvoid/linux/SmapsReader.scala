@@ -61,6 +61,7 @@ object SmapsReader {
   import ParserHelper._
 
   val EntryHeader = """([0-9a-f]{8,16})-([0-9a-f]{8,16}) (.{4}) ([0-9a-f]{8}) (.{5}) (\d+)(?:\s+(.*))?""".r
+  val VmFlagsLine = """VmFlags: .*""".r
   val DataLine = """(\w+):\s+(\d*) kB""".r
   val dataReader: PartialFunction[String, (String, Long)] = { case DataLine(name, number) => (name, number.asLong) }
 
@@ -72,6 +73,7 @@ object SmapsReader {
         res += dataReader.apply(line)
         line = reader.readLine
       }
+      while (VmFlagsLine.unapplySeq(line).isDefined) line = reader.readLine()
       (res.toMap, line)
     }
 
