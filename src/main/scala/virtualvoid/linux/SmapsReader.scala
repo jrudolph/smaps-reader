@@ -19,14 +19,15 @@ object ParserHelper {
  * Reads in a /proc/<pid>/smaps file and shuffles, sorts and sums up data inside.
  */
 object SmapsReader {
-  case class SmapsEntry(name: String,
-                        from: Long,
-                        to: Long,
-                        perms: String,
-                        offset: Long,
-                        dev: String,
-                        inode: Long,
-                        stats: Map[String, Long])
+  case class SmapsEntry(
+      name:   String,
+      from:   Long,
+      to:     Long,
+      perms:  String,
+      offset: Long,
+      dev:    String,
+      inode:  Long,
+      stats:  Map[String, Long])
 
   case class ProcessSmaps(pid: Int, cmdLine: Seq[String], entries: Seq[SmapsEntry]) {
     def total(key: String): Long =
@@ -35,17 +36,17 @@ object SmapsReader {
     lazy val cmd: String =
       mapCmdLineInfo(
         cmdLine.headOption
-               .getOrElse("")
-               .split(' ')
-               .headOption.getOrElse(""), cmdLine)
+          .getOrElse("")
+          .split(' ')
+          .headOption.getOrElse(""), cmdLine)
 
     def extraInfo: String =
       if (cmd == "sbt")
-        " "+workingDirectory.getName
+        " " + workingDirectory.getName
       else
         ""
 
-    def workingDirectory = new File("/proc/"+pid+"/cwd").getCanonicalFile
+    def workingDirectory = new File("/proc/" + pid + "/cwd").getCanonicalFile
   }
 
   def mapCmdLineInfo(cmd: String, cmdLine: Seq[String]): String =
@@ -101,11 +102,10 @@ object SmapsReader {
       Nil
   }
 
-
   def output(processData: ProcessSmaps): Unit = {
     val data = processData.entries
 
-    println("Statistics for "+processData.pid+" "+processData.cmdLine)
+    println("Statistics for " + processData.pid + " " + processData.cmdLine)
     def total(key: String) =
       data.map(_.stats(key)).sum
 
@@ -113,7 +113,7 @@ object SmapsReader {
       data.sortBy(-_.stats(key)) filter (_.stats(key) > 0) take 10
 
     def stat(key: String) =
-      "Total "+key+": "+total(key)+" kB\n"+(firstX(key).map(e => "%5d kB RSS: %5d kB %08x-%08x %8d %s".format(e.stats(key), e.stats("Rss"), e.from, e.to, e.inode, e.name)) mkString "\n")
+      "Total " + key + ": " + total(key) + " kB\n" + (firstX(key).map(e => "%5d kB RSS: %5d kB %08x-%08x %8d %s".format(e.stats(key), e.stats("Rss"), e.from, e.to, e.inode, e.name)) mkString "\n")
 
     println(stat("Shared_Clean"))
     println(stat("Shared_Dirty"))
@@ -129,14 +129,14 @@ object SmapsReader {
       start +: splitAt(rest.drop(1), at)
     }
   def readCmdLine(pid: Int): Seq[String] = {
-    val file = "/proc/"+pid+"/cmdline"
+    val file = "/proc/" + pid + "/cmdline"
     val is = new FileInputStream(file)
     val bytes = new collection.mutable.ArrayBuffer[Byte](file.length)
 
     val buffer = new Array[Byte](1000)
     var read = is.read(buffer, 0, file.length)
     bytes ++= buffer.take(read)
-    while(read != -1) {
+    while (read != -1) {
       read = is.read(buffer, 0, file.length)
       bytes ++= buffer.take(read)
     }
@@ -144,7 +144,7 @@ object SmapsReader {
     splitAt[Byte](bytes.toSeq, 0).map(x => new String(x.toArray))
   }
   def readProcessSmaps(pid: Int): ProcessSmaps = {
-    val reader = new BufferedReader(new FileReader("/proc/"+pid+"/smaps"))
+    val reader = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"))
     val smaps = read(reader)
     reader.close()
 
@@ -174,9 +174,9 @@ object SmapsReader {
       val maps = processes.map(readProcessSmaps)
 
       def stat(key: String) {
-        val list = maps.map(x => (x, x.total(key))).sortBy(- _._2)
-        println("Total "+key+": "+maps.map(_.total(key)).sum+" KB\n")
-        println("Top 20 "+key+"\n")
+        val list = maps.map(x => (x, x.total(key))).sortBy(-_._2)
+        println("Total " + key + ": " + maps.map(_.total(key)).sum + " KB\n")
+        println("Top 20 " + key + "\n")
         printUnderlined("Memory Usg | PID   | Command line")
 
         list.take(20).foreach {
@@ -186,7 +186,7 @@ object SmapsReader {
         println()
         println("Top 20 %s by cmd\n" format key)
         printUnderlined("Memory Usg | Command line")
-        val byCmd = maps.groupBy(_.cmd).mapValues(_.map(_.total(key)).sum).toSeq.sortBy(- _._2)
+        val byCmd = maps.groupBy(_.cmd).mapValues(_.map(_.total(key)).sum).toSeq.sortBy(-_._2)
         byCmd.take(20).foreach {
           case (cmd, size) =>
             println("%7d KB | %s" format (size, cmd))
