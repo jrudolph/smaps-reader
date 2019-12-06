@@ -20,7 +20,7 @@ case class SmapsEntry(
 
 case class ProcessSmaps(pid: Int, cmdLine: Seq[String], entries: Seq[SmapsEntry]) {
   def total(key: String): Long =
-    entries.map(_.stats.get(key).getOrElse(0L)).sum
+    entries.map(_.stats.getOrElse(key, 0L)).sum
 
   lazy val cmd: String =
     mapCmdLineInfo(
@@ -35,13 +35,13 @@ case class ProcessSmaps(pid: Int, cmdLine: Seq[String], entries: Seq[SmapsEntry]
     else
       ""
 
-  def workingDirectory = new File("/proc/" + pid + "/cwd").getCanonicalFile
+  def workingDirectory: File = new File("/proc/" + pid + "/cwd").getCanonicalFile
 }
 
 object SmapsReaderApp extends App {
   import SmapsReader._
 
-  if (args.size > 0)
+  if (args.length > 0)
     output(readProcessSmaps(args(0).toInt))
   else {
     val proc = new File("/proc")
@@ -77,9 +77,9 @@ object SmapsReaderApp extends App {
  * Reads in a /proc/<pid>/smaps file and shuffles, sorts and sums up data inside.
  */
 object SmapsReader {
-  val EntryHeader = """([0-9a-f]{8,16})-([0-9a-f]{8,16}) (.{4}) ([0-9a-f]{8,9}) (.{5}) (\d+)(?:\s+(.*))?""".r
-  val EntryLine = """(\w+):\s+(\d*)(?: kB)?""".r
-  val VmFlagsLine = """VmFlags: .*""".r
+  private val EntryHeader = """([0-9a-f]{8,16})-([0-9a-f]{8,16}) (.{4}) ([0-9a-f]{8,9}) (.{5}) (\d+)(?:\s+(.*))?""".r
+  private val EntryLine = """(\w+):\s+(\d*)(?: kB)?""".r
+  private val VmFlagsLine = """VmFlags: .*""".r
 
   def readProcessSmaps(pid: Int): ProcessSmaps = {
     val smaps = read("/proc/" + pid + "/smaps")
