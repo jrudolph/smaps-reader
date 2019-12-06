@@ -46,7 +46,6 @@ object SmapsReaderApp extends App {
   else {
     val proc = new File("/proc")
     val processes = proc.listFiles().filter(isAccessible).map(_.getName).filter(isProcess).map(_.toInt)
-
     val maps = processes.map(readProcessSmaps)
 
     def stat(key: String): Unit = {
@@ -88,7 +87,7 @@ object SmapsReader {
     ProcessSmaps(pid, readCmdLine(pid), smaps)
   }
 
-  def read(smapsFile: String): List[SmapsEntry] = try {
+  def read(smapsFile: String): Vector[SmapsEntry] = try {
     trait ReadingState {
       def nextLine(line: String): ReadingState
       def complete: List[SmapsEntry]
@@ -97,7 +96,7 @@ object SmapsReader {
       override def nextLine(line: String): ReadingState = line match {
         case EntryHeader(from, to, perms, offset, dev, inode, name) =>
           ReadingEntries(
-            SmapsEntry(name, from.asHexLong, to.asHexLong, perms, offset.asHexLong, dev, inode.toLong, _),
+            SmapsEntry(name.intern, from.asHexLong, to.asHexLong, perms.intern, offset.asHexLong, dev.intern, inode.toLong, _),
             Map.empty, existingEntries
           )
       }
@@ -105,7 +104,7 @@ object SmapsReader {
     }
     case class ReadingEntries(finish: Map[String, Long] => SmapsEntry, collected: Map[String, Long], existingEntries: List[SmapsEntry]) extends ReadingState {
       override def nextLine(line: String): ReadingState = line match {
-        case EntryLine(name, number) => copy(collected = collected + (name -> number.toLong))
+        case EntryLine(name, number) => copy(collected = collected + (name.intern -> number.toLong))
         case VmFlagsLine()           => WaitingForHeader(finish(collected) :: existingEntries)
       }
       override def complete: List[SmapsEntry] = (finish(collected) :: existingEntries).reverse
@@ -114,13 +113,14 @@ object SmapsReader {
       .getLines
       .foldLeft(WaitingForHeader(Nil): ReadingState)(_.nextLine(_))
       .complete
+      .toVector
   } catch {
-    case io: IOException if io.getMessage.contains("Permission denied") => Nil // ignore
-    case _: FileNotFoundException                                       => Nil // ignore, process might be gone already (SubstrateVM also reports permission denied as FileNotFoundException)
+    case io: IOException if io.getMessage.contains("Permission denied") => Vector.empty // ignore
+    case _: FileNotFoundException                                       => Vector.empty // ignore, process might be gone already (SubstrateVM also reports permission denied as FileNotFoundException)
     case NonFatal(e) =>
       println(s"Problem in file [$smapsFile]")
       e.printStackTrace()
-      Nil
+      Vector.empty
   }
 
   def output(processData: ProcessSmaps): Unit = {
