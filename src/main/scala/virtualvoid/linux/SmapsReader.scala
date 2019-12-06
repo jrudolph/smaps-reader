@@ -116,6 +116,7 @@ object SmapsReader {
       .complete
   } catch {
     case io: IOException if io.getMessage.contains("Permission denied") => Nil // ignore
+    case _: FileNotFoundException                                       => Nil // ignore, process might be gone already (SubstrateVM also reports permission denied as FileNotFoundException)
     case NonFatal(e) =>
       println(s"Problem in file [$smapsFile]")
       e.printStackTrace()
@@ -142,7 +143,7 @@ object SmapsReader {
     println(stat("Swap"))
   }
 
-  def readCmdLine(pid: Int): Seq[String] = {
+  def readCmdLine(pid: Int): Seq[String] = try {
     val file = "/proc/" + pid + "/cmdline"
     val is = new FileInputStream(file)
     val bytes = new collection.mutable.ArrayBuffer[Byte](file.length)
@@ -156,6 +157,12 @@ object SmapsReader {
     }
 
     splitAt[Byte](bytes.toSeq, 0).map(x => new String(x.toArray))
+  } catch {
+    case _: IOException => Nil // ignore
+    case NonFatal(e) =>
+      println(s"Problem getting cmdline for [$pid]")
+      e.printStackTrace()
+      Nil
   }
   def splitAt[T](x: Seq[T], at: T): Seq[Seq[T]] =
     if (x.isEmpty)
