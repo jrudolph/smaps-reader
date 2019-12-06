@@ -3,6 +3,8 @@ package virtualvoid.linux
 import java.io._
 import java.math.BigInteger
 
+import scala.util.control.NonFatal
+
 object ParserHelper {
   trait Conversion {
     def asLong: Long
@@ -94,7 +96,7 @@ object SmapsReader {
     } else Nil
   } catch {
     case io: IOException if io.getMessage.contains("Permission denied") => Nil // ignore
-    case e =>
+    case NonFatal(e) =>
       e.printStackTrace()
       Nil
   }
@@ -152,7 +154,7 @@ object SmapsReader {
     name.toInt
     true
   } catch {
-    case _ => false
+    case NonFatal(_) => false
   }
   def isAccessible(f: File): Boolean =
     new File(f, "smaps").canRead
