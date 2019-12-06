@@ -5,10 +5,12 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % scalaTestV % "test"
 )
 
-scalaVersion := scalaV
 name := "smaps-reader"
 organization := "net.virtualvoid"
 version := "0.5.0"
+
+scalaVersion := scalaV
+scalacOptions ++= Seq("-feature", "-deprecation")
 
 // docs
 
